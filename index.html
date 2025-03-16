@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Safety Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        textarea, input[type="file"] {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .warning-container {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 15px;
+            background: red;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .show-warning {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Check Content Safety</h2>
+        <form action="api.php" method="POST" enctype="multipart/form-data">
+            <textarea name="text" placeholder="Enter text to check..."></textarea>
+            <input type="file" name="file" accept="image/*,video/*,audio/*">
+            <button type="submit">Check</button>
+        </form>
+        <div class="warning-container" id="warningContainer"></div>
+    </div>
+
+    <script>
+        function showWarning(message) {
+            const container = document.getElementById('warningContainer');
+            container.innerHTML = `⚠️ ${message}`;
+            container.classList.add('show-warning');
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideWarning();
+            }, 5000);
+        }
+
+        // Function to hide warning message
+        function hideWarning() {
+            const container = document.getElementById('warningContainer');
+            container.classList.remove('show-warning');
+        }
+
+        // Fetch JSON data from PHP API
+        fetch('api.php')
+        .then(response => response.json())
+        .then(data => {
+            // Display full JSON data in the output box
+            document.getElementById("output").textContent = JSON.stringify(data, null, 4);
+
+            // Extract SafeSearch values
+            const safeSearch = data.image_analysis.responses[0].safeSearchAnnotation;
+
+            // Conditions to show warnings
+            if (safeSearch.adult === "LIKELY" || safeSearch.adult === "VERY_LIKELY") {
+                showWarning("Warning: This content may contain adult material!");
+            }
+            if (safeSearch.violence === "LIKELY" || safeSearch.violence === "VERY_LIKELY") {
+                showWarning("Warning: This content may contain violent material!");
+            }
+            if (safeSearch.racy === "LIKELY" || safeSearch.racy === "VERY_LIKELY") {
+                showWarning("Warning: This content may contain racy material!");
+            }
+        })
+        .catch(error => {
+            document.getElementById("output").textContent = "Error fetching data: " + error;
+        });
+    </script>
+</body>
+</html>
